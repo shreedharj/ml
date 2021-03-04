@@ -215,7 +215,9 @@ if 'save' in sys.argv:
 # plotting the learning curve
 plt.xlabel('Episodes')
 plt.ylabel('Cumulative Reward')
-plt.title('Performance')
+plt.title('Performance (Epsilon: {} | Gamma: {} | Alpha: {})'
+          .format(agentQ.get_epsilon(), agentQ.get_gamma(), agentQ.get_alpha()))
+
 plt.plot(reward_per_episode)
 agentQ.print_q_tab()
 plt.show()
