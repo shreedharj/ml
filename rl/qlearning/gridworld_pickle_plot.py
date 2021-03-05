@@ -18,7 +18,7 @@ class GridWorld:
         self.start_location = (0, 0)
 
         # Set locations for the bomb and the gold
-        self.end_location = (13, 14)
+        self.end_location = (14, 14)
         # self.trap_location1 = (3, 8)
         # self.trap_location2 = (7, 10)
         # self.trap_location3 = (5, 13)
@@ -94,6 +94,14 @@ class GridWorld:
     def check_state(self):  # checks terminal states
         if self.start_location in self.terminal_states:
             return 'TERMINAL'  # this is where the program should end?
+
+#   function to change/overwrite the start location
+    def set_start_location(self, start_state):
+        self.start_location = start_state
+
+#   function to change/overwrite the end location
+    def set_end_location(self, end_state):
+        self.end_location = end_state
 
 
 class RandomAgent():
@@ -178,8 +186,8 @@ class Q_Agent():
         return self.alpha
 
     #   function to change/overwrite the alpha value
-    def set_alpha(self):
-        return self.alpha
+    def set_alpha(self, alpha):
+        self.alpha = alpha
 
 
 def play(environment, agent, episodes=10000, max_steps_per_episode=1000, learn=True):  # change to 100000
@@ -216,10 +224,12 @@ agentQ = Q_Agent(environment)
 if 'load' in sys.argv:
     agentQ = pickle.load(open('agent.pk', 'rb'))
 
-    #  updating the epsilon, gamma, alpha values
-    agentQ.set_epsilon(0.1)
-    # agentQ.set_gamma(0.9)
-    # agentQ.set_alpha(0.9)
+#  updating the epsilon, gamma, alpha values, start state, end state
+    agentQ.set_epsilon(0.05)
+    agentQ.set_gamma(0.9)
+    agentQ.set_alpha(0.9)
+    # environment.start_location((0, 0))
+    environment.set_end_location((13, 14))
 
 start_time = round(time.time() * 1000)
 reward_per_episode = play(environment, agentQ, episodes=10000, learn=True)  # learn true allows learning
