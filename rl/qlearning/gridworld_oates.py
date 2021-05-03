@@ -1,9 +1,11 @@
 import numpy as np
-import operator
 import matplotlib.pyplot as plt
+from matplotlib import colors
 import pickle
 import sys
 import time
+
+colormap = colors.ListedColormap(["lightblue", "darkblue"])
 
 
 class GridWorld:
@@ -155,8 +157,8 @@ class Q_Agent():
         return max_val, max_key
 
     def print_q_tab(self):
-        for x in range(environment.width):  # printing the Q table keys
-            for y in range(environment.height):
+        for x in range(self.environment.width):  # printing the Q table keys
+            for y in range(self.environment.height):
                 v, k = self.get_max((x, y))
                 # print("X {}, Y {} = {}".format(x, y, (v, k)))
                 print("{}".format(k), end=" ")
@@ -167,6 +169,17 @@ class Q_Agent():
         #         v, k = self.get_max((x, y))
                 # print("{}".format(round(v, 1)), end=" ")
             # print('\n')
+
+    def print_visualization(self):
+        for x in range(self.environment.width):
+            for y in range(self.environment.height):
+                v, k = self.get_max((x, y))
+                plt.figure(figsize=(5, 5))
+                # plt.imshow(k, cmap=colormap, alpha=2)
+                # plt.draw()
+                # plt.pause(2)
+                plt.plot(k)
+                plt.show()
 
     def get_epsilon(self):
         return self.epsilon
@@ -190,7 +203,7 @@ class Q_Agent():
         self.alpha = alpha
 
 
-def play(environment, agent, episodes=100, max_steps_per_episode=1000, learn=True):  # change to 100000
+def play(environment, agent, episodes=100, max_steps_per_episode=1000, learn=True, visualize=False):  # change to 100000
     #  Runs iterations and updates Q-values if desired.
     reward_per_episode = []  # Initialise performance log
     for trial in range(episodes):  # Run episodes
@@ -209,46 +222,106 @@ def play(environment, agent, episodes=100, max_steps_per_episode=1000, learn=Tru
             cumulative_reward += reward  # cumulative reward increases over time
             # print(cumulative_reward)  # prints the cumulative reward for each episode ***
 
+            # print("Old State {} Action {}".format(old_state, action))
             if environment.check_state() == 'TERMINAL':  # If game is in terminal state, game over and start next trial
                 environment.__init__()
                 game_over = True
+
+        # Visualize
+        if visualize:
+            q_tab_data = get_qtable_data(agent, agent.q_table)
+            # for x in range(15):
+            #     for y in range(15):
+            #         print(q_tab_data[x][y])
+            print_color_grid(q_tab_data, pause=False)
 
         reward_per_episode.append(cumulative_reward)  # Append reward for start trial to performance log
 
     return reward_per_episode  # Return performance log
 
 
-environment = GridWorld()
-agentQ = Q_Agent(environment)
-
-if 'load' in sys.argv:
-    agentQ = pickle.load(open('agent.pk', 'rb'))
-
-#  updating the epsilon, gamma, alpha values, start state, end state
-    agentQ.set_epsilon(0.05)
-    agentQ.set_gamma(0.9)
-    agentQ.set_alpha(0.9)
-    # environment.start_location((0, 0))
-    environment.set_end_location((14, 14))
-
-start_time = round(time.time() * 1000)
-reward_per_episode = play(environment, agentQ, episodes=10000, learn=True)  # learn true allows learning
-end_time = round(time.time() * 1000)
-
-if 'save' in sys.argv:
-    pickle.dump(agentQ, open('agent.pk', 'wb'))
+def get_qtable_data(qagent, qtable):
+    # data = np.array((15, 15))
+    # https://stackoverflow.com/questions/6667201/how-to-define-a-two-dimensional-array
+    w, h = 15, 15
+    data = [[0.0 for x in range(w)] for y in range(h)]
+    for key, val in qtable.items():
+        # print("Q Table Key: {} Data {}".format(key, val))
+        x = key[0]
+        y = key[1]
+        data[x][y] = qagent.get_max(key)[0]
+    return data
 
 
-# plotting the learning curve
-plt.xlabel('Episodes')
-plt.ylabel('Cumulative Reward')
-plt.title('Performance (Epsilon: {} | Gamma: {} | Alpha: {})'
-          .format(agentQ.get_epsilon(), agentQ.get_gamma(), agentQ.get_alpha()))
+def show_grid(data, print_data=False):
+    # display the 2d data matrix
+    if print_data:
+        for d in data:
+            print(d)
 
-plt.plot(reward_per_episode)
-agentQ.print_q_tab()
-plt.show()
+        # we will visualize the bits of this data matrix with matplot.pyplot;
+        # the .imshow function from Python can do the job
+    plt.figure(figsize=(5, 5))
+    plt.imshow(data, cmap=colormap, alpha=2)
+    plt.draw()
+    plt.pause(1)
 
-print('Cumulative reward per episodes: %.2f' % (sum(reward_per_episode[:10000])/10000))
-print('Total run time %.2f ms' % (end_time - start_time), 'or %.2f mins' % ((end_time - start_time)/60000))
-# print(sys.argv)
+
+def print_color_grid(data, pause=True):
+    # https://www.pythonpool.com/matplotlib-pcolormesh/
+    column_labels = list('ABCDEFGH')
+    row_labels = list('123456789')
+    fig, ax = plt.subplots()
+    heatmap = plt.pcolormesh(data)
+    thismanager = plt.get_current_fig_manager()
+    thismanager.window.wm_geometry("+100+100")
+    plt.draw()
+    plt.pause(0.4)
+    if pause:
+        input("Press ay key to continue ...")
+    plt.close()
+
+
+def main():
+    environment = GridWorld()
+    agentQ = Q_Agent(environment)
+
+    if 'load' in sys.argv:
+        agentQ = pickle.load(open('agent.pk', 'rb'))
+
+    #  updating the epsilon, gamma, alpha values, start state, end state
+        agentQ.set_epsilon(0.05)
+        agentQ.set_gamma(0.89)
+        agentQ.set_alpha(0.9)
+        # environment.start_location((0, 0))
+        environment.set_end_location((14, 14))
+
+    start_time = round(time.time() * 1000)
+    reward_per_episode = play(environment, agentQ, episodes=10000, learn=True, visualize=True)  # learn true allows learning
+    end_time = round(time.time() * 1000)
+
+    # q_tab_data = get_qtable_data(agentQ, agentQ.q_table)
+    # print_color_grid(q_tab_data, pause=True)
+
+    if 'save' in sys.argv:
+        pickle.dump(agentQ, open('agent.pk', 'wb'))
+
+    # plotting the learning curve
+    plt.xlabel('Episodes')
+    plt.ylabel('Cumulative Reward')
+    plt.title('Performance (Epsilon: {} | Gamma: {} | Alpha: {})'
+              .format(agentQ.get_epsilon(), agentQ.get_gamma(), agentQ.get_alpha()))
+
+    plt.plot(reward_per_episode)
+    # agentQ.print_q_tab()
+    plt.show()
+
+    print('Cumulative reward per episodes: %.2f' % (sum(reward_per_episode[:10000])/10000))
+    print('Total run time %.2f ms' % (end_time - start_time), 'or %.2f mins' % ((end_time - start_time)/60000))
+    # print(sys.argv)
+
+    # agentQ.print_visualization()
+
+
+if __name__ == "__main__":
+    main()
