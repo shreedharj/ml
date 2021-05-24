@@ -97,13 +97,21 @@ class GridWorld:
         if self.start_location in self.terminal_states:
             return 'TERMINAL'  # this is where the program should end?
 
-#   function to change/overwrite the start location
+    # function to change/overwrite the start location
     def set_start_location(self, start_state):
         self.start_location = start_state
 
-#   function to change/overwrite the end location
+    # function to return the end location
+    def get_start_location(self):
+        return self.start_location
+
+    # function to change/overwrite the end location
     def set_end_location(self, end_state):
         self.end_location = end_state
+
+    # function to return the end location
+    def get_end_location(self):
+        return self.end_location
 
 
 class RandomAgent():
@@ -117,7 +125,6 @@ class Q_Agent():
     def __init__(self, environment, epsilon=0.05, alpha=0.9, gamma=0.9):
         self.environment = environment
         self.q_table = dict()  # Store all Q-values in dictionary of dictionaries
-
         self.directional_q_table = dict()
         for x in range(environment.height):  # Loop through all possible grid spaces, create sub-dictionary for each
             for y in range(environment.width):
@@ -163,23 +170,13 @@ class Q_Agent():
                 # print("X {}, Y {} = {}".format(x, y, (v, k)))
                 print("{}".format(k), end=" ")
             print()
-        # print()
-        # for x in range(environment.width):  # printing the Q values
-        #     for y in range(environment.height):
-        #         v, k = self.get_max((x, y))
-                # print("{}".format(round(v, 1)), end=" ")
-            # print('\n')
-
-    def print_visualization(self):
-        for x in range(self.environment.width):
+        print()
+        for x in range(self.environment.width):  # printing the Q values
             for y in range(self.environment.height):
                 v, k = self.get_max((x, y))
-                plt.figure(figsize=(5, 5))
-                # plt.imshow(k, cmap=colormap, alpha=2)
-                # plt.draw()
-                # plt.pause(2)
-                plt.plot(k)
-                plt.show()
+                print("{}".format(round(v, 1)), end=" ")
+
+            print('\n')
 
     def get_epsilon(self):
         return self.epsilon
@@ -203,9 +200,11 @@ class Q_Agent():
         self.alpha = alpha
 
 
-def play(environment, agent, episodes=100, max_steps_per_episode=1000, learn=True, visualize=False):  # change to 100000
+def play(environment, agent, episodes=1000, max_steps_per_episode=1000, learn=True, visualize=False):  # change to 100000
     #  Runs iterations and updates Q-values if desired.
     reward_per_episode = []  # Initialise performance log
+    print("End location at start of play: ", environment.get_end_location())
+
     for trial in range(episodes):  # Run episodes
         cumulative_reward = 0  # Initialise values of each game
         step = 0
@@ -220,6 +219,7 @@ def play(environment, agent, episodes=100, max_steps_per_episode=1000, learn=Tru
                 agent.learn(old_state, reward, new_state, action)
 
             cumulative_reward += reward  # cumulative reward increases over time
+            step += 1
             # print(cumulative_reward)  # prints the cumulative reward for each episode ***
 
             # print("Old State {} Action {}".format(old_state, action))
@@ -253,26 +253,10 @@ def get_qtable_data(qagent, qtable):
     return data
 
 
-def show_grid(data, print_data=False):
-    # display the 2d data matrix
-    if print_data:
-        for d in data:
-            print(d)
-
-        # we will visualize the bits of this data matrix with matplot.pyplot;
-        # the .imshow function from Python can do the job
-    plt.figure(figsize=(5, 5))
-    plt.imshow(data, cmap=colormap, alpha=2)
-    plt.draw()
-    plt.pause(1)
-
-
 def print_color_grid(data, pause=True):
     # https://www.pythonpool.com/matplotlib-pcolormesh/
-    column_labels = list('ABCDEFGH')
-    row_labels = list('123456789')
     fig, ax = plt.subplots()
-    heatmap = plt.pcolormesh(data)
+    heatmap = plt.imshow(data, origin="upper", cmap="gray")
     thismanager = plt.get_current_fig_manager()
     thismanager.window.wm_geometry("+100+100")
     plt.draw()
@@ -284,24 +268,29 @@ def print_color_grid(data, pause=True):
 
 def main():
     environment = GridWorld()
+    print("End location at start: ", environment.get_end_location())
     agentQ = Q_Agent(environment)
 
     if 'load' in sys.argv:
         agentQ = pickle.load(open('agent.pk', 'rb'))
 
-    #  updating the epsilon, gamma, alpha values, start state, end state
-        agentQ.set_epsilon(0.05)
-        agentQ.set_gamma(0.89)
-        agentQ.set_alpha(0.9)
-        # environment.start_location((0, 0))
-        environment.set_end_location((14, 14))
+    # updating the epsilon, gamma, alpha values, start state, end state
+    agentQ.set_epsilon(0.05)
+    agentQ.set_gamma(0.9)
+    agentQ.set_alpha(0.9)
+
+    environment.set_start_location((0, 0))
+    environment.set_end_location((5, 5))
+    print("End location before calling play: ", environment.get_end_location())
 
     start_time = round(time.time() * 1000)
-    reward_per_episode = play(environment, agentQ, episodes=10000, learn=True, visualize=True)  # learn true allows learning
+    # learn true allows learning and visualize true allows runtime color grid to update
+    reward_per_episode = play(environment=environment, agent=agentQ, episodes=1000, learn=True, visualize=False)
     end_time = round(time.time() * 1000)
 
-    # q_tab_data = get_qtable_data(agentQ, agentQ.q_table)
-    # print_color_grid(q_tab_data, pause=True)
+    # printing the color grid in the very end
+    q_tab_data = get_qtable_data(agentQ, agentQ.q_table)
+    print_color_grid(q_tab_data, pause=True)
 
     if 'save' in sys.argv:
         pickle.dump(agentQ, open('agent.pk', 'wb'))
@@ -313,14 +302,13 @@ def main():
               .format(agentQ.get_epsilon(), agentQ.get_gamma(), agentQ.get_alpha()))
 
     plt.plot(reward_per_episode)
-    # agentQ.print_q_tab()
+    agentQ.print_q_tab()
     plt.show()
 
     print('Cumulative reward per episodes: %.2f' % (sum(reward_per_episode[:10000])/10000))
     print('Total run time %.2f ms' % (end_time - start_time), 'or %.2f mins' % ((end_time - start_time)/60000))
+    print("End location: ", environment.get_end_location())
     # print(sys.argv)
-
-    # agentQ.print_visualization()
 
 
 if __name__ == "__main__":
