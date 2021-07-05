@@ -23,23 +23,15 @@ class GridWorld:
         self.end_location = (14, 14)
         # self.trap_location1 = (3, 8)
         # self.trap_location2 = (7, 10)
-        # self.trap_location3 = (5, 13)
-        # self.trap_location4 = (5, 4)
-        # self.trap_location5 = (12, 6)
 
         self.terminal_states = [self.end_location]
-
         # self.terminal_states = [self.end_location, self.trap_location1, self.trap_location2]
-        # self.terminal_states = [self.end_location, self.trap_location1, self.trap_location2, self.trap_location3,
-        #                         self.trap_location4, self.trap_location5]
 
         # Set grid rewards for special cells
         self.grid[self.end_location[0], self.end_location[1]] = 10
         # self.grid[self.trap_location1[0], self.trap_location1[1]] = -100
         # self.grid[self.trap_location2[0], self.trap_location2[1]] = -100
-        # self.grid[self.trap_location3[0], self.trap_location3[1]] = -100
-        # self.grid[self.trap_location4[0], self.trap_location4[1]] = -100
-        # self.grid[self.trap_location5[0], self.trap_location5[1]] = -100
+
 
         # Set available actions
         self.actions = ['U', 'D', 'L', 'R']
@@ -149,8 +141,8 @@ class Q_Agent():
         max_q_value_in_new_state = max(q_values_of_state.values())
         start_q_value = self.q_table[old_state][action]
         #  bellman equation
-        self.q_table[old_state][action] = (1 - self.alpha) * start_q_value + self.alpha * (
-                reward + self.gamma * max_q_value_in_new_state)
+        self.q_table[old_state][action] = start_q_value + self.alpha * \
+                                          (reward + self.gamma * max_q_value_in_new_state - start_q_value)
 
     def get_max(self, key):
         dict_data = self.q_table[(key[0], key[1])]
@@ -200,7 +192,7 @@ class Q_Agent():
         self.alpha = alpha
 
 
-def play(environment, agent, episodes=1000, max_steps_per_episode=1000, learn=True, visualize=False):  # change to 100000
+def play(environment, agent, episodes=10000, max_steps_per_episode=5000, learn=True, visualize=False):
     #  Runs iterations and updates Q-values if desired.
     reward_per_episode = []  # Initialise performance log
     print("End location at start of play: ", environment.get_end_location())
@@ -219,7 +211,7 @@ def play(environment, agent, episodes=1000, max_steps_per_episode=1000, learn=Tr
                 agent.learn(old_state, reward, new_state, action)
 
             cumulative_reward += reward  # cumulative reward increases over time
-            step += 1
+            # step += 1
             # print(cumulative_reward)  # prints the cumulative reward for each episode ***
 
             # print("Old State {} Action {}".format(old_state, action))
@@ -262,35 +254,37 @@ def print_color_grid(data, pause=True):
     plt.draw()
     plt.pause(0.4)
     if pause:
-        input("Press ay key to continue ...")
+        input("Press any key to continue...")
     plt.close()
 
 
 def main():
-    environment = GridWorld()
-    print("End location at start: ", environment.get_end_location())
-    agentQ = Q_Agent(environment)
+    environment1 = GridWorld()
+    print("End location at start: ", environment1.get_end_location())
+    print("Start location at start: ", environment1.get_start_location())
+
+    agentQ = Q_Agent(environment1)
 
     if 'load' in sys.argv:
         agentQ = pickle.load(open('agent.pk', 'rb'))
+        environment1.set_end_location((14, 14))
+        agentQ.set_gamma(0.95)
 
-    # updating the epsilon, gamma, alpha values, start state, end state
-    agentQ.set_epsilon(0.05)
-    agentQ.set_gamma(0.9)
+    agentQ.set_epsilon(0)
     agentQ.set_alpha(0.9)
 
-    environment.set_start_location((0, 0))
-    environment.set_end_location((5, 5))
-    print("End location before calling play: ", environment.get_end_location())
+    environment1.set_start_location((0, 0))
+    print("End location before calling play: ", environment1.get_end_location())
 
     start_time = round(time.time() * 1000)
     # learn true allows learning and visualize true allows runtime color grid to update
-    reward_per_episode = play(environment=environment, agent=agentQ, episodes=1000, learn=True, visualize=False)
+    reward_per_episode = play(environment=environment1, agent=agentQ, episodes=1000,
+                              max_steps_per_episode=5000, learn=True, visualize=False)
     end_time = round(time.time() * 1000)
 
     # printing the color grid in the very end
     q_tab_data = get_qtable_data(agentQ, agentQ.q_table)
-    print_color_grid(q_tab_data, pause=True)
+    # print_color_grid(q_tab_data, pause=True)
 
     if 'save' in sys.argv:
         pickle.dump(agentQ, open('agent.pk', 'wb'))
@@ -307,7 +301,8 @@ def main():
 
     print('Cumulative reward per episodes: %.2f' % (sum(reward_per_episode[:10000])/10000))
     print('Total run time %.2f ms' % (end_time - start_time), 'or %.2f mins' % ((end_time - start_time)/60000))
-    print("End location: ", environment.get_end_location())
+    print("End location: ", environment1.get_end_location())
+
     # print(sys.argv)
 
 
