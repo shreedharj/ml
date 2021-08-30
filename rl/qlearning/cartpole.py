@@ -3,8 +3,6 @@ import numpy as np
 import math
 from collections import deque
 
-# https://medium.com/@sanjitjain2/openai-gyms-cart-pole-balancing-using-q-learning-c92f88112312
-
 class CartPole():
     def __init__(self, buckets=(1, 1, 6, 12,), n_episodes=1000, n_win_ticks=195, min_alpha=0.1, min_epsilon=0.1,
                  gamma=0.9, ada_divisor=25, max_env_steps=None, monitor=False):
