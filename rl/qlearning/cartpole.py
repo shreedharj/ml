@@ -1,6 +1,3 @@
-
-# https://medium.com/@sanjitjain2/openai-gyms-cart-pole-balancing-using-q-learning-c92f88112312
-
 import pickle
 import gym
 import numpy as np
