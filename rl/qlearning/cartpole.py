@@ -1,27 +1,33 @@
+
+# https://medium.com/@sanjitjain2/openai-gyms-cart-pole-balancing-using-q-learning-c92f88112312
+
+import pickle
 import gym
 import numpy as np
 import math
+import sys
 from collections import deque
+
 
 class CartPole():
     def __init__(self, buckets=(1, 1, 6, 12,), n_episodes=1000, n_win_ticks=195, min_alpha=0.1, min_epsilon=0.1,
-                 gamma=0.9, ada_divisor=25, max_env_steps=None, monitor=False):
-        self.buckets = buckets # down-scaling feature space to discrete range
-        self.n_episodes = n_episodes # training episodes
-        self.n_win_ticks = n_win_ticks # average ticks over 100 episodes required for win
-        self.min_alpha = min_alpha # learning rate
-        self.min_epsilon = min_epsilon # exploration rate
-        self.gamma = gamma # discount factor
-        self.ada_divisor = ada_divisor # only for development purposes
+                 gamma=0.95, ada_divisor=25, max_env_steps=None, monitor=False):
+        self.buckets = buckets  # down-scaling feature space to discrete range
+        self.n_episodes = n_episodes  # training episodes
+        self.n_win_ticks = n_win_ticks  # average ticks over 100 episodes required for win
+        self.min_alpha = min_alpha  # learning rate
+        self.min_epsilon = min_epsilon  # exploration rate
+        self.gamma = gamma  # discount factor
+        self.ada_divisor = ada_divisor  # only for development purposes
 
         self.env = gym.make('CartPole-v0')
         if max_env_steps is not None: self.env._max_episode_steps = max_env_steps
-        if monitor: self.env = gym.wrappers.Monitor(self.env, 'tmp/cartpole-1', force=True) # record results for upload
+        if monitor: self.env = gym.wrappers.Monitor(self.env, 'tmp/cartpole-1', force=True)  # record results for upload
 
         # initialising Q-table
         self.Q = np.zeros(self.buckets + (self.env.action_space.n,))
 
-    # Discretizing input space to make Q-table and to reduce dimmensionality
+    # Discretizing input space to make Q-table and to reduce dimensionality
     def discretize(self, obs):
         upper_bounds = [self.env.observation_space.high[0], 0.5, self.env.observation_space.high[2], math.radians(50)]
         lower_bounds = [self.env.observation_space.low[0], -0.5, self.env.observation_space.low[2], -math.radians(50)]
@@ -36,7 +42,7 @@ class CartPole():
 
     # Updating Q-value of state-action pair based on the update equation
     def update_q(self, state_old, action, reward, state_new, alpha):
-        self.Q[state_old][action] += alpha * (reward + self.gamma * np.max(self.Q[state_new]) - self.Q[state_old][action])
+        self.Q[state_old][action] = self.Q[state_old][action] + alpha * (reward + self.gamma * np.max(self.Q[state_new]) - self.Q[state_old][action])
 
     # Adaptive learning of Exploration Rate
     def get_epsilon(self, t):
@@ -45,6 +51,12 @@ class CartPole():
     # Adaptive learning of Learning Rate
     def get_alpha(self, t):
         return max(self.min_alpha, min(1.0, 1.0 - math.log10((t + 1) / self.ada_divisor)))
+
+    def get_gamma(self):
+        return self.gamma
+
+    def set_gamma(self, gamma):
+        self.gamma = gamma
 
     def run(self):
         for e in range(self.n_episodes):
@@ -64,6 +76,10 @@ class CartPole():
                 # Choose action according to greedy policy and take it
                 action = self.choose_action(current_state, epsilon)
                 obs, reward, done, _ = self.env.step(action)
+                if done:
+                    reward = -1
+                else:
+                    reward = 0
                 new_state = self.discretize(obs)
 
                 # Update Q-Table
@@ -72,8 +88,18 @@ class CartPole():
                 i += 1
 
 
-if __name__ == "__main__":
-
+def main():
     # Make an instance of CartPole class
     solver = CartPole()
+    if 'load' in sys.argv:
+        solver = pickle.load(open('solver.pk', 'rb'))
+        solver.set_gamma(0.7)
+
     solver.run()
+
+    if 'save' in sys.argv:
+        pickle.dump(solver, open('solver.pk', 'wb'))
+
+
+if __name__ == "__main__":
+    main()
