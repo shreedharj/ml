@@ -39,7 +39,7 @@ class CartPole():
 
     # Updating Q-value of state-action pair based on the update equation
     def update_q(self, state_old, action, reward, state_new, alpha):
-        self.Q[state_old][action] = self.Q[state_old][action] + alpha * (reward + self.gamma * np.max(self.Q[state_new]) - self.Q[state_old][action])
+        self.Q[state_old][action] += alpha * (reward + self.gamma * np.max(self.Q[state_new]) - self.Q[state_old][action])
 
     # Adaptive learning of Exploration Rate
     def get_epsilon(self, t):
