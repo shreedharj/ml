@@ -87,15 +87,15 @@ class CartPole():
 
 def main():
     # Make an instance of CartPole class
-    solver = CartPole()
+    polecart = CartPole()
     if 'load' in sys.argv:
-        solver = pickle.load(open('solver.pk', 'rb'))
-        solver.set_gamma(0.7)
+        polecart = pickle.load(open('polecart.pk', 'rb'))
+        polecart.set_gamma(0.7)
 
-    solver.run()
+    polecart.run()
 
     if 'save' in sys.argv:
-        pickle.dump(solver, open('solver.pk', 'wb'))
+        pickle.dump(polecart, open('polecart.pk', 'wb'))
 
 
 if __name__ == "__main__":
