@@ -49,7 +49,7 @@ class MountainCar():
             while not done:
                 # Render environment for the episodes
                 # if i <= 100 or i >= (episodes - 500):
-                if i >= (self.episodes - 20):
+                if False and i >= (self.episodes - 20):
                     env.render()
 
                 # Determine next action - epsilon greedy strategy
@@ -100,13 +100,13 @@ class MountainCar():
 
         return ave_reward_list
 
+    def get_gamma(self):
+        return self.gamma
 
-def get_gamma(self):
-    return self.gamma
 
+    def set_gamma(self, gamma):
+        self.gamma = gamma
 
-def set_gamma(self, gamma):
-    self.gamma = gamma
 
 
 def main():
@@ -115,10 +115,10 @@ def main():
         cart = pickle.load(open('cart.pk', 'rb'))
         cart.set_gamma(0.7)
 
+    rewards = cart.run()
+
     if 'save' in sys.argv:
         pickle.dump(cart, open('cart.pk', 'wb'))
-
-    rewards = cart.run()
 
     # Plot Rewards
     plt.plot(100 * (np.arange(len(rewards)) + 1), rewards)
