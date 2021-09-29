@@ -55,7 +55,7 @@ class CartPole():
     def set_gamma(self, gamma):
         self.gamma = gamma
 
-    def run(self):
+    def run(self, render = False):
         for e in range(self.n_episodes):
             # As states are continuous, discretize them into buckets
             current_state = self.discretize(self.env.reset())
@@ -68,7 +68,8 @@ class CartPole():
 
             while not done:
                 # Render environment
-                self.env.render()
+                if render:
+                    self.env.render()
 
                 # Choose action according to greedy policy and take it
                 action = self.choose_action(current_state, epsilon)
@@ -92,7 +93,8 @@ def main():
         polecart = pickle.load(open('polecart.pk', 'rb'))
         polecart.set_gamma(0.7)
 
-    polecart.run()
+    render = 'render' in sys.argv
+    polecart.run(render = render)
 
     if 'save' in sys.argv:
         pickle.dump(polecart, open('polecart.pk', 'wb'))
