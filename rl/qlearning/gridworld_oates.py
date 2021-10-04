@@ -192,7 +192,7 @@ class Q_Agent():
         self.alpha = alpha
 
 
-def play(environment, agent, episodes=1000, max_steps_per_episode=5000, learn=True, visualize=False, d3_visualize=False):
+def play(environment, agent, episodes=10000, max_steps_per_episode=5000, learn=True, visualize=False, d3_visualize=False):
     #  Runs iterations and updates Q-values if desired.
     reward_per_episode = []  # Initialise performance log
     print("End location at start of play: ", environment.get_end_location())
@@ -226,7 +226,7 @@ def play(environment, agent, episodes=1000, max_steps_per_episode=5000, learn=Tr
 
         # 3D Visualize
         if d3_visualize:
-            if trial % 200 == 0:
+            if trial % 5000 == 0:
                 q_tab_data = get_qtable_data(agent, agent.q_table)
                 print_3D_plot(agent, q_tab_data, False)
 
@@ -288,6 +288,7 @@ def print_3D_plot(agentQ, q_tab_data, pause=True):
     wf.plot_wireframe(x, y, z, rstride=1, cstride=1, color='navy')
     wf.set_title('Performance (Epsilon: {} | Gamma: {} | Alpha: {})'
               .format(agentQ.get_epsilon(), agentQ.get_gamma(), agentQ.get_alpha()))
+    # fig.savefig('plot.png')
     plt.show()
 
 
@@ -301,7 +302,7 @@ def main():
     if 'load' in sys.argv:
         agentQ = pickle.load(open('agent.pk', 'rb'))
         # environment1.set_end_location((12, 10))
-        agentQ.set_gamma(0.8)
+        agentQ.set_gamma(0.7)
 
     agentQ.set_epsilon(0.05)
     agentQ.set_alpha(0.9)
@@ -311,7 +312,7 @@ def main():
 
     start_time = round(time.time() * 1000)
     # learn true allows learning and visualize true allows runtime color grid to update
-    reward_per_episode = play(environment=environment1, agent=agentQ, episodes=1000, max_steps_per_episode=5000,
+    reward_per_episode = play(environment=environment1, agent=agentQ, episodes=10000, max_steps_per_episode=5000,
                               learn=True, visualize=False, d3_visualize=True)
     end_time = round(time.time() * 1000)
 
@@ -322,7 +323,8 @@ def main():
     # plotting the learning curve
     print_learning_curve(agentQ, reward_per_episode)
 
-    print_3D_plot(agentQ, q_tab_data)
+
+    # print_3D_plot(agentQ, q_tab_data)
 
     if 'save' in sys.argv:
         apply_factor_qtable_data(agentQ, agentQ.q_table, 1)  # this is manipulating QTab to influence performance
