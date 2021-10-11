@@ -11,7 +11,7 @@ env.reset()
 
 class MountainCar():
     # Define Q-learning function
-    def __init__(self, env, alpha=0.2, gamma=0.9, epsilon=0.8, min_eps=0, episodes=5000):
+    def __init__(self, env, alpha=0.1, gamma=0.9, epsilon=0.8, min_eps=0, episodes=10000):
         self.env = env
         self.alpha = alpha
         self.gamma = gamma
@@ -103,22 +103,20 @@ class MountainCar():
     def get_gamma(self):
         return self.gamma
 
-
     def set_gamma(self, gamma):
         self.gamma = gamma
-
 
 
 def main():
     cart = MountainCar(env=env)
     if 'load' in sys.argv:
-        cart = pickle.load(open('cart.pk', 'rb'))
-        cart.set_gamma(0.7)
+        cart = pickle.load(open('mtncar.pk', 'rb'))
+        cart.set_gamma(0.99)
 
     rewards = cart.run()
 
     if 'save' in sys.argv:
-        pickle.dump(cart, open('cart.pk', 'wb'))
+        pickle.dump(cart, open('mtncar.pk', 'wb'))
 
     # Plot Rewards
     plt.plot(100 * (np.arange(len(rewards)) + 1), rewards)
