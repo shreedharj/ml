@@ -4,11 +4,15 @@ import numpy as np
 import math
 import sys
 from collections import deque
+import time
+from scipy.signal import savgol_filter
+
+from matplotlib import pyplot as plt
 
 
 class CartPole():
-    def __init__(self, buckets=(1, 1, 6, 12,), n_episodes=1000, n_win_ticks=195, min_alpha=0.1, min_epsilon=0.1,
-                 gamma=0.95, ada_divisor=25, max_env_steps=None, monitor=False):
+    def __init__(self, buckets=(1, 1, 6, 12,), n_episodes=10000, n_win_ticks=195, min_alpha=0.1, min_epsilon=0.1,
+                 gamma=0.9, ada_divisor=25, max_env_steps=None, monitor=False):
         self.buckets = buckets  # down-scaling feature space to discrete range
         self.n_episodes = n_episodes  # training episodes
         self.n_win_ticks = n_win_ticks  # average ticks over 100 episodes required for win
@@ -39,7 +43,8 @@ class CartPole():
 
     # Updating Q-value of state-action pair based on the update equation
     def update_q(self, state_old, action, reward, state_new, alpha):
-        self.Q[state_old][action] += alpha * (reward + self.gamma * np.max(self.Q[state_new]) - self.Q[state_old][action])
+        self.Q[state_old][action] += alpha * (
+                    reward + self.gamma * np.max(self.Q[state_new]) - self.Q[state_old][action])
 
     # Adaptive learning of Exploration Rate
     def get_epsilon(self, t):
@@ -55,7 +60,11 @@ class CartPole():
     def set_gamma(self, gamma):
         self.gamma = gamma
 
-    def run(self, render = False):
+    def run(self, render=False):
+        # Initialize variables to track rewards
+        timestamp_list = []
+        steps_list = []
+
         for e in range(self.n_episodes):
             # As states are continuous, discretize them into buckets
             current_state = self.discretize(self.env.reset())
@@ -66,6 +75,8 @@ class CartPole():
             done = False
             i = 0
 
+            start_time = round(time.time(), 5)
+
             while not done:
                 # Render environment
                 if render:
@@ -74,7 +85,11 @@ class CartPole():
                 # Choose action according to greedy policy and take it
                 action = self.choose_action(current_state, epsilon)
                 obs, reward, done, _ = self.env.step(action)
+
                 if done:
+                    end_time = round(time.time(), 5)
+                    time_elapsed = end_time - start_time
+                    timestamp_list.append(time_elapsed)
                     reward = -1
                 else:
                     reward = 0
@@ -85,16 +100,37 @@ class CartPole():
                 current_state = new_state
                 i += 1
 
+            steps_list.append(i)
+
+        return timestamp_list, steps_list
+
+
+def print_learning_curve(timestamp_list):
+    plt.xlabel('Episodes')
+    plt.ylabel('Time in Seconds')
+    plt.plot(timestamp_list)
+    plt.show()
+
+
+def print_steps_curve(steps_list):
+    plt.xlabel('Episodes')
+    plt.ylabel('Steps')
+    plt.plot(steps_list)
+    plt.show()
+
 
 def main():
     # Make an instance of CartPole class
-    polecart = CartPole()
+    polecart = CartPole(min_epsilon=0.001, n_episodes=4000)
     if 'load' in sys.argv:
         polecart = pickle.load(open('polecart.pk', 'rb'))
         polecart.set_gamma(0.7)
 
     render = 'render' in sys.argv
-    polecart.run(render = render)
+    timestamp_list, steps_list = polecart.run(render=render)
+    y = savgol_filter(steps_list, 101, 3)
+    print_steps_curve(y)
+    # print(timestamp_list)
 
     if 'save' in sys.argv:
         pickle.dump(polecart, open('polecart.pk', 'wb'))
