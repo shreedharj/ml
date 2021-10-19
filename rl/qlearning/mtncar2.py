@@ -113,7 +113,24 @@ def main():
         cart = pickle.load(open('mtncar.pk', 'rb'))
         cart.set_gamma(0.99)
 
+    cart.episodes = 30000
+    cart.epsilon = 0.025
+    cart.alpha = 0.1
+
     rewards = cart.run()
+
+    # Plot 3D Plot
+    print(cart.Q.shape)
+    q = np.amax(cart.Q, axis=2)
+    print(q.shape)
+    ny, nx = q.shape
+    x = np.linspace(0, 1, nx)
+    y = np.linspace(0, 1, ny)
+    xv, yv = np.meshgrid(x, y)
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.plot_surface(xv, yv, q)
+    plt.show()
 
     if 'save' in sys.argv:
         pickle.dump(cart, open('mtncar.pk', 'wb'))
